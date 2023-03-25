@@ -1,7 +1,12 @@
 package pedis
 
 var defaultHandlers = map[string]func(conn *Conn, args []Value) bool{
-	"PING": pingHandler,
+	"PING":    pingHandler,
+	"SET":     SetHandler,
+	"GET":     GetHandler,
+	"HSET":    HSetHandler,
+	"HGET":    HGetHandler,
+	"HGETALL": HGetAllHandler,
 }
 
 func pingHandler(conn *Conn, args []Value) bool {

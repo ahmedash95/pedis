@@ -9,6 +9,11 @@ import (
 
 // Resp is a Redis Serialization Protocol (RESP) parser.
 
+// //////////////////////////////////////////////////////////
+//
+//	VALUE
+//
+// //////////////////////////////////////////////////////////
 // Type represents the type of a RESP value.
 type Type byte
 
@@ -76,6 +81,18 @@ func (v Value) String() string {
 	return v.str
 }
 
+func BulkString(str string) Value {
+	return Value{
+		typ: Bulk,
+		str: str,
+	}
+}
+
+// //////////////////////////////////////////////////////////
+//
+//	RESP
+//
+// //////////////////////////////////////////////////////////
 type Resp struct {
 	buf *bufio.Reader
 }
@@ -207,6 +224,89 @@ func (w *Writer) WriteError(s string) error {
 	_, err := w.w.Write([]byte(fmt.Sprintf("-%s\r\n", s)))
 	return err
 }
+
+func (w *Writer) WriteInteger(i int) error {
+	_, err := w.w.Write([]byte(fmt.Sprintf(":%d\r\n", i)))
+	return err
+}
+
+func (w *Writer) WriteBulkString(s string) error {
+	_, err := w.w.Write([]byte(fmt.Sprintf("$%d\r\n%s\r\n", len(s), s)))
+	return err
+}
+
+func (w *Writer) WriteNull() error {
+	_, err := w.w.Write([]byte("$-1\r\n"))
+	return err
+}
+
+func (w *Writer) WriteArray(v Value) error {
+	_, err := w.w.Write([]byte(fmt.Sprintf("*%d\r\n", len(v.array))))
+
+	if err != nil {
+		return err
+	}
+
+	for _, v := range v.array {
+		switch v.typ {
+		case String:
+			err = w.WriteSimpleString(v.str)
+		case Error:
+			err = w.WriteError(v.str)
+		case Integer:
+			err = w.WriteInteger(v.integer)
+		case Bulk:
+			err = w.WriteBulkString(v.str)
+		}
+	}
+
+	return err
+}
+
+// func (w *Writer) WriteArray(v Value) error {
+// 	bytes, err := v.MarshalResp()
+// 	if err != nil {
+// 		fmt.Println("bytes: " + string(bytes))
+// 		panic(v)
+// 		return err
+// 	}
+
+// 	_, err = w.w.Write(bytes)
+
+// 	return err
+// }
+
+// func (v Value) MarshalResp() ([]byte, error) {
+// 	return marshalResp(v)
+// }
+
+// func marshalResp(v Value) ([]byte, error) {
+// 	var buf bytes.Buffer
+
+// 	switch v.typ {
+// 	case String:
+// 		buf.WriteString(fmt.Sprintf("+%s\r\n", v.str))
+// 	case Error:
+// 		buf.WriteString(fmt.Sprintf("-%s\r\n", v.str))
+// 	case Integer:
+// 		buf.WriteString(fmt.Sprintf(":%d\r\n", v.integer))
+// 	case Bulk:
+// 		buf.WriteString(fmt.Sprintf("$%d\r\n%s\r\n", len(v.str), v.str))
+// 	case Array:
+// 		buf.WriteString(fmt.Sprintf("*%d\r\n", len(v.array)))
+// 		for _, val := range v.array {
+// 			b, err := marshalResp(val)
+// 			if err != nil {
+// 				return buf.Bytes(), err
+// 			}
+// 			buf.Write(b)
+// 		}
+// 	default:
+// 		return buf.Bytes(), fmt.Errorf("unknown type: %v", v.typ)
+// 	}
+
+// 	return buf.Bytes(), nil
+// }
 
 // //////////////////////////////////////////////////////////
 //

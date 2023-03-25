@@ -97,8 +97,6 @@ func (s *Server) handleConn(conn net.Conn) error {
 			return nil
 		}
 	}
-
-	return nil
 }
 
 func (s *Server) ListenAndServe(addr string) error {
