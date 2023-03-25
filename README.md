@@ -9,7 +9,11 @@ Pedis is a Redis clone written in Golang. It is a learning project for me to lea
 
 ### Build
 
-TBD
+Pedis does not have any external dependencies. To build it, simply run:
+
+```bash
+$ go build -o pedis-server && ./pedis-server
+```
 
 ## Usage
 
@@ -26,7 +30,11 @@ import (
 func main() {
 	fmt.Println("Listening on port 6379")
 
-	server := pedis.NewServer()
+	config := &pedis.Config{
+		EnableAof: true,
+	} // to enable AOF persistence or set config to nil
+
+	server := pedis.NewServer(config)
 	server.ListenAndServe("0.0.0.0:6379")
 }
 ```
@@ -52,6 +60,10 @@ $ redis-cli -p 6379
 - [x] HLEN
 - [x] HKEYS
 - [x] HVALS
+
+## Persistence
+At the moment, Pedis supports AOF persistence. It is disable by default. To enabled it, set `EnableAof` to `true`
+in the config. the policy for now is to append to the AOF file every second.
 
 ## License
 MIT
