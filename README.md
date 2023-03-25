@@ -65,5 +65,20 @@ $ redis-cli -p 6379
 At the moment, Pedis supports AOF persistence. It is disable by default. To enabled it, set `EnableAof` to `true`
 in the config. the policy for now is to append to the AOF file every second.
 
+# Benchmarks
+
+With no disk persistence
+
+```bash
+go run main.go
+```
+
+```bash
+$ redis-benchmark -p 6379 -n 100000 -c 100 -t set,get
+
+SET: 411761.19 requests per second
+GET: 476640.00 requests per second
+```
+
 ## License
 MIT
