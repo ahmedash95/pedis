@@ -41,17 +41,17 @@ $ redis-cli -p 6379
 
 - [x] GET
 - [x] SET
-- [ ] DEL
-- [ ] EXISTS
+- [x] DEL
+- [x] EXISTS
 - [ ] EXPIRE
 - [ ] TTL
 - [x] HSET
 - [x] HGET
 - [x] HGETALL
-- [ ] HDEL
-- [ ] HLEN
-- [ ] HKEYS
-- [ ] HVALS
+- [x] HDEL
+- [x] HLEN
+- [x] HKEYS
+- [x] HVALS
 
 ## License
 MIT
