@@ -140,7 +140,7 @@ func (s *Server) ListenAndServe(addr string) error {
 					return
 				}
 
-				fmt.Println(err)
+				panic(err)
 			}
 		}()
 	}
