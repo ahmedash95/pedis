@@ -42,3 +42,45 @@ func GetHandler(conn *Conn, args []Value) bool {
 	conn.Writer.WriteBulkString(value)
 	return true
 }
+
+func DelHandler(conn *Conn, args []Value) bool {
+	if len(args) != 1 {
+		conn.Writer.WriteError("ERR wrong number of arguments for 'del' command")
+		return true
+	}
+
+	key := args[0].String()
+	setMU.Lock()
+	if _, ok := set[key]; !ok {
+		setMU.Unlock()
+
+		conn.Writer.WriteInteger(0)
+		return true
+	}
+	delete(set, key)
+	setMU.Unlock()
+
+	conn.Writer.WriteInteger(1)
+	return true
+}
+
+func ExistsHandler(conn *Conn, args []Value) bool {
+	if len(args) != 1 {
+		conn.Writer.WriteError("ERR wrong number of arguments for 'exists' command")
+		return true
+	}
+
+	key := args[0].String()
+
+	setMU.RLock()
+	_, ok := set[key]
+	setMU.RUnlock()
+
+	if !ok {
+		conn.Writer.WriteInteger(0)
+		return true
+	}
+
+	conn.Writer.WriteInteger(1)
+	return true
+}

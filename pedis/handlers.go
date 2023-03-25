@@ -4,9 +4,15 @@ var defaultHandlers = map[string]func(conn *Conn, args []Value) bool{
 	"PING":    pingHandler,
 	"SET":     SetHandler,
 	"GET":     GetHandler,
+	"DEL":     DelHandler,
+	"EXISTS":  ExistsHandler,
 	"HSET":    HSetHandler,
 	"HGET":    HGetHandler,
 	"HGETALL": HGetAllHandler,
+	"HDEL":    HDelHandler,
+	"HLEN":    HLenHandler,
+	"HKEYS":   HKeysHandler,
+	"HVALS":   HValsHandler,
 }
 
 func pingHandler(conn *Conn, args []Value) bool {
