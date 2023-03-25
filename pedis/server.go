@@ -49,7 +49,7 @@ func NewServer(config *Config) *Server {
 		config:   config,
 	}
 
-	if config.EnableAof {
+	if s.config != nil && config.EnableAof {
 		bootstrapAof(s)
 	}
 
@@ -140,7 +140,7 @@ func (s *Server) ListenAndServe(addr string) error {
 					return
 				}
 
-				panic(err)
+				fmt.Println(err)
 			}
 		}()
 	}
