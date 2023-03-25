@@ -129,9 +129,10 @@ func (a *Aof) AppendMany(vals []Value) error {
 	}
 
 	if !a.atEnd {
-		// todo: read the records to the end of the file instead of seeking here
-		a.f.Seek(0, io.SeekEnd) // jump to the end of the file
-		a.atEnd = true
+		a.ReadValues(nil)
+		if !a.atEnd {
+			return errors.New("Aof file is not at the end")
+		}
 	}
 
 	_, err := a.f.Write(bs)
