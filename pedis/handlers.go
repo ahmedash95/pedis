@@ -1,18 +1,31 @@
 package pedis
 
-var defaultHandlers = map[string]func(conn *Conn, args []Value) bool{
-	"PING":    pingHandler,
-	"SET":     SetHandler,
-	"GET":     GetHandler,
-	"DEL":     DelHandler,
-	"EXISTS":  ExistsHandler,
-	"HSET":    HSetHandler,
-	"HGET":    HGetHandler,
-	"HGETALL": HGetAllHandler,
-	"HDEL":    HDelHandler,
-	"HLEN":    HLenHandler,
-	"HKEYS":   HKeysHandler,
-	"HVALS":   HValsHandler,
+type CommandHandler struct {
+	Handler func(conn *Conn, args []Value) bool
+	persist bool
+}
+
+func (h *CommandHandler) should_persist() bool {
+	return h.persist
+}
+
+func (h *CommandHandler) call(conn *Conn, args []Value) bool {
+	return h.Handler(conn, args)
+}
+
+var defaultHandlers = map[string]CommandHandler{
+	"PING":    CommandHandler{pingHandler, false},
+	"SET":     CommandHandler{SetHandler, true},
+	"GET":     CommandHandler{GetHandler, false},
+	"DEL":     CommandHandler{DelHandler, true},
+	"EXISTS":  CommandHandler{ExistsHandler, false},
+	"HSET":    CommandHandler{HSetHandler, true},
+	"HGET":    CommandHandler{HGetHandler, false},
+	"HGETALL": CommandHandler{HGetAllHandler, false},
+	"HDEL":    CommandHandler{HDelHandler, true},
+	"HLEN":    CommandHandler{HLenHandler, false},
+	"HKEYS":   CommandHandler{HKeysHandler, false},
+	"HVALS":   CommandHandler{HValsHandler, false},
 }
 
 func pingHandler(conn *Conn, args []Value) bool {
