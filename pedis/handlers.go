@@ -14,18 +14,18 @@ func (h *CommandHandler) call(conn *Conn, args []Value) bool {
 }
 
 var defaultHandlers = map[string]CommandHandler{
-	"PING":    CommandHandler{pingHandler, false},
-	"SET":     CommandHandler{SetHandler, true},
-	"GET":     CommandHandler{GetHandler, false},
-	"DEL":     CommandHandler{DelHandler, true},
-	"EXISTS":  CommandHandler{ExistsHandler, false},
-	"HSET":    CommandHandler{HSetHandler, true},
-	"HGET":    CommandHandler{HGetHandler, false},
-	"HGETALL": CommandHandler{HGetAllHandler, false},
-	"HDEL":    CommandHandler{HDelHandler, true},
-	"HLEN":    CommandHandler{HLenHandler, false},
-	"HKEYS":   CommandHandler{HKeysHandler, false},
-	"HVALS":   CommandHandler{HValsHandler, false},
+	"PING":    {pingHandler, false},
+	"SET":     {SetHandler, true},
+	"GET":     {GetHandler, false},
+	"DEL":     {DelHandler, true},
+	"EXISTS":  {ExistsHandler, false},
+	"HSET":    {HSetHandler, true},
+	"HGET":    {HGetHandler, false},
+	"HGETALL": {HGetAllHandler, false},
+	"HDEL":    {HDelHandler, true},
+	"HLEN":    {HLenHandler, false},
+	"HKEYS":   {HKeysHandler, false},
+	"HVALS":   {HValsHandler, false},
 }
 
 func pingHandler(conn *Conn, args []Value) bool {
