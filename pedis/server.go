@@ -24,25 +24,39 @@ func NewConn(conn net.Conn) *Conn {
 	}
 }
 
-type Server struct {
-	mu       sync.RWMutex
-	handlers map[string]func(conn *Conn, args []Value) bool
-	accept   func(conn *Conn) bool
+type Config struct {
+	EnableAof bool
+	AofFile   string
 }
 
-func NewServer() *Server {
-	handlers := make(map[string]func(conn *Conn, args []Value) bool)
+type Server struct {
+	mu       sync.RWMutex
+	handlers map[string]CommandHandler
+	accept   func(conn *Conn) bool
+	config   *Config
+	Aof      *Aof
+}
+
+func NewServer(config *Config) *Server {
+	handlers := make(map[string]CommandHandler)
 
 	for command, handler := range defaultHandlers {
 		handlers[strings.ToUpper(command)] = handler
 	}
 
-	return &Server{
+	s := &Server{
 		handlers: handlers,
+		config:   config,
 	}
+
+	if config.EnableAof {
+		bootstrapAof(s)
+	}
+
+	return s
 }
 
-func (s *Server) HandleFunc(command string, handler func(conn *Conn, args []Value) bool) {
+func (s *Server) HandleFunc(command string, handler CommandHandler) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	s.handlers[strings.ToUpper(command)] = handler
@@ -77,9 +91,9 @@ func (s *Server) handleConn(conn net.Conn) error {
 			continue
 		}
 
-		commands := value.Array()
+		request := value.Array()
 
-		command := strings.ToUpper(commands[0].String())
+		command := strings.ToUpper(request[0].String())
 
 		s.mu.RLock()
 		handler, ok := s.handlers[command]
@@ -93,8 +107,14 @@ func (s *Server) handleConn(conn net.Conn) error {
 			continue
 		}
 
-		if !handler(c, commands[1:]) {
+		if !handler.call(c, request[1:]) {
 			return nil
+		}
+
+		if s.Aof != nil && handler.should_persist() {
+			if err := s.Aof.Append(value); err != nil {
+				return err
+			}
 		}
 	}
 }
@@ -124,4 +144,36 @@ func (s *Server) ListenAndServe(addr string) error {
 			}
 		}()
 	}
+}
+
+func bootstrapAof(s *Server) {
+	aof, err := NewAof(s.config.AofFile)
+	if err != nil {
+		panic(err)
+	}
+
+	s.Aof = aof
+
+	aof.ReadValues(func(value Value) bool {
+		commands := value.Array()
+
+		command := strings.ToUpper(commands[0].String())
+
+		s.mu.RLock()
+		handler, ok := s.handlers[command]
+		s.mu.RUnlock()
+
+		if !ok {
+			return true
+		}
+
+		// create fake connection with fake writer
+		conn := &Conn{
+			Writer: NewWriter(io.Discard),
+		}
+
+		handler.call(conn, commands[1:])
+
+		return true
+	})
 }

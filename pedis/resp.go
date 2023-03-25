@@ -2,6 +2,7 @@ package pedis
 
 import (
 	"bufio"
+	"bytes"
 	"fmt"
 	"io"
 	"strconv"
@@ -263,50 +264,37 @@ func (w *Writer) WriteArray(v Value) error {
 	return err
 }
 
-// func (w *Writer) WriteArray(v Value) error {
-// 	bytes, err := v.MarshalResp()
-// 	if err != nil {
-// 		fmt.Println("bytes: " + string(bytes))
-// 		panic(v)
-// 		return err
-// 	}
+func (v Value) MarshalResp() ([]byte, error) {
+	return marshalResp(v)
+}
 
-// 	_, err = w.w.Write(bytes)
+func marshalResp(v Value) ([]byte, error) {
+	var buf bytes.Buffer
 
-// 	return err
-// }
+	switch v.typ {
+	case String:
+		buf.WriteString(fmt.Sprintf("+%s\r\n", v.str))
+	case Error:
+		buf.WriteString(fmt.Sprintf("-%s\r\n", v.str))
+	case Integer:
+		buf.WriteString(fmt.Sprintf(":%d\r\n", v.integer))
+	case Bulk:
+		buf.WriteString(fmt.Sprintf("$%d\r\n%s\r\n", len(v.str), v.str))
+	case Array:
+		buf.WriteString(fmt.Sprintf("*%d\r\n", len(v.array)))
+		for _, val := range v.array {
+			b, err := marshalResp(val)
+			if err != nil {
+				return buf.Bytes(), err
+			}
+			buf.Write(b)
+		}
+	default:
+		return buf.Bytes(), fmt.Errorf("unknown type: %v", v.typ)
+	}
 
-// func (v Value) MarshalResp() ([]byte, error) {
-// 	return marshalResp(v)
-// }
-
-// func marshalResp(v Value) ([]byte, error) {
-// 	var buf bytes.Buffer
-
-// 	switch v.typ {
-// 	case String:
-// 		buf.WriteString(fmt.Sprintf("+%s\r\n", v.str))
-// 	case Error:
-// 		buf.WriteString(fmt.Sprintf("-%s\r\n", v.str))
-// 	case Integer:
-// 		buf.WriteString(fmt.Sprintf(":%d\r\n", v.integer))
-// 	case Bulk:
-// 		buf.WriteString(fmt.Sprintf("$%d\r\n%s\r\n", len(v.str), v.str))
-// 	case Array:
-// 		buf.WriteString(fmt.Sprintf("*%d\r\n", len(v.array)))
-// 		for _, val := range v.array {
-// 			b, err := marshalResp(val)
-// 			if err != nil {
-// 				return buf.Bytes(), err
-// 			}
-// 			buf.Write(b)
-// 		}
-// 	default:
-// 		return buf.Bytes(), fmt.Errorf("unknown type: %v", v.typ)
-// 	}
-
-// 	return buf.Bytes(), nil
-// }
+	return buf.Bytes(), nil
+}
 
 // //////////////////////////////////////////////////////////
 //
